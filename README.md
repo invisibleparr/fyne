@@ -11,7 +11,15 @@ this can be turned on and off at any time, so when you would open a main menu yo
 the clips show it better than words describe.
 
 # Demo
-fixme add videos after push
+
+https://github.com/user-attachments/assets/e5f14a69-6e3e-45cd-94d0-1327a9a96765
+
+https://github.com/user-attachments/assets/5490303d-9547-4f21-b0bd-f5eae744c3ec
+
+https://github.com/user-attachments/assets/2959d61f-7e4f-4f5b-9e7c-3f049f48cb26
+
+https://github.com/user-attachments/assets/eeecaf98-ae73-4d3b-a25f-763e10f05e8d
+
 all the demos are available under cmd/
 
 # About
