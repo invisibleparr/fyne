@@ -1,11 +1,18 @@
-<p align="center">
-  <a href="https://pkg.go.dev/fyne.io/fyne/v2?tab=doc" title="Go API Reference" rel="nofollow"><img src="https://img.shields.io/badge/go-documentation-blue.svg?style=flat" alt="Go API Reference"></a>
-  <a href="https://img.shields.io/github/v/release/fyne-io/fyne?include_prereleases" title="Latest Release" rel="nofollow"><img src="https://img.shields.io/github/v/release/fyne-io/fyne?include_prereleases" alt="Latest Release"></a>
-  <a href='https://gophers.slack.com/messages/fyne'><img src='https://img.shields.io/badge/join-us%20on%20slack-gray.svg?longCache=true&logo=slack&colorB=blue' alt='Join us on Slack' /></a>
-  <br />
-  <a href="https://github.com/fyne-io/fyne/actions"><img src="https://github.com/fyne-io/fyne/workflows/Platform%20Tests/badge.svg" alt="Build Status" /></a>
-  <a href='https://coveralls.io/github/fyne-io/fyne?branch=develop'><img src='https://coveralls.io/repos/github/fyne-io/fyne/badge.svg?branch=develop' alt='Coverage Status' /></a>
-</p>
+# Fork - Gamepad support
+this project adds gamepad to fyne, or more accuratly it wires it up.
+this was done by qwen3.8-flash-next where i wrote no code and only told it what to do.
+
+all you need to do is to link this project as the fyne repo in your project and it works right away.
+it does some sensible default wiring like A is left click, B is right click, left analog moves mouse.
+holding "back" and "start" at the same time for 2 seconds brings up the mapping.
+the guide button brings up the on screen keyboard.
+there is also a raw gamepad mode where it doesnt emulate anything and you can raw read the gamepad, see the pong example.
+this can be turned on and off at any time, so when you would open a main menu you can turn it on for navigation and when resuming the game turn it off again and read raw. you figure it out.
+the clips show it better than words describe.
+
+# Demo
+fixme add videos after push
+all the demos are available under cmd/
 
 # About
 

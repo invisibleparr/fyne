@@ -6,7 +6,9 @@ import (
 	"bytes"
 	"context"
 	"image"
+	"image/color"
 	_ "image/png" // for the icon
+	"math"
 	"os"
 	"runtime"
 	"strings"
@@ -424,12 +426,17 @@ func (w *window) closed(viewport *glfw.Window) {
 	w.processClosed()
 }
 
-func fyneToNativeCursor(cursor desktop.Cursor) (*glfw.Cursor, bool) {
+func fyneToNativeCursor(cursor desktop.Cursor, scale float32) (*glfw.Cursor, bool) {
 	cursorType, standard := cursor.(desktop.StandardCursor)
 	if !standard {
 		img, x, y := cursor.Image()
 		if img == nil {
 			return nil, true
+		}
+		if scale > 0 && scale != 1 { // hardware cursor is device pixels; fyne images are not
+			img = scaleImage(img, scale)
+			x = int(float32(x) * scale)
+			y = int(float32(y) * scale)
 		}
 		return glfw.CreateCursor(img, x, y), true
 	}
@@ -445,6 +452,69 @@ func (w *window) SetCursor(cursor *glfw.Cursor) {
 	async.EnsureMain(func() {
 		w.viewport.SetCursor(cursor)
 	})
+}
+
+// scaleImage rescales an image with bilinear sampling; cursor images are authored in
+// fyne units but hardware cursors need device pixels.
+func scaleImage(src image.Image, scale float32) image.Image {
+	b := src.Bounds()
+	w := int(float32(b.Dx()) * scale)
+	h := int(float32(b.Dy()) * scale)
+	if w < 1 {
+		w = 1
+	}
+	if h < 1 {
+		h = 1
+	}
+
+	dst := image.NewRGBA(image.Rect(0, 0, w, h))
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			srcX := (float32(x)+0.5)/scale - 0.5 + float32(b.Min.X)
+			srcY := (float32(y)+0.5)/scale - 0.5 + float32(b.Min.Y)
+			dst.Set(x, y, bilinearAt(src, srcX, srcY))
+		}
+	}
+	return dst
+}
+
+func bilinearAt(src image.Image, x, y float32) color.Color {
+	b := src.Bounds()
+	x0 := int(math.Floor(float64(x)))
+	y0 := int(math.Floor(float64(y)))
+	x1, y1 := x0+1, y0+1
+	fx, fy := float64(x)-float64(x0), float64(y)-float64(y0)
+
+	clampX0 := clampInt(x0, b.Min.X, b.Max.X-1)
+	clampY0 := clampInt(y0, b.Min.Y, b.Max.Y-1)
+	clampX1 := clampInt(x1, b.Min.X, b.Max.X-1)
+	clampY1 := clampInt(y1, b.Min.Y, b.Max.Y-1)
+
+	// color.RGBA() values are premultiplied 16-bit; blending them directly stays premultiplied.
+	r00, g00, b00, a00 := src.At(clampX0, clampY0).RGBA()
+	r10, g10, b10, a10 := src.At(clampX1, clampY0).RGBA()
+	r01, g01, b01, a01 := src.At(clampX0, clampY1).RGBA()
+	r11, g11, b11, a11 := src.At(clampX1, clampY1).RGBA()
+
+	w00, w10 := (1-fx)*(1-fy), fx*(1-fy)
+	w01, w11 := (1-fx)*fy, fx*fy
+
+	mix := func(a, b, c, d uint32) uint8 {
+		v := w00*float64(a) + w10*float64(b) + w01*float64(c) + w11*float64(d)
+		return uint8(uint32(v) >> 8)
+	}
+	return color.RGBA{R: mix(r00, r10, r01, r11), G: mix(g00, g10, g01, g11),
+		B: mix(b00, b10, b01, b11), A: mix(a00, a10, a01, a11)}
+}
+
+func clampInt(v, min, max int) int {
+	if v < min {
+		return min
+	}
+	if v > max {
+		return max
+	}
+	return v
 }
 
 func (w *window) setCustomCursor(rawCursor *glfw.Cursor, isCustomCursor bool) {

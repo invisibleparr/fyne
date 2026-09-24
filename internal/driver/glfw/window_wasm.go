@@ -188,7 +188,7 @@ func (w *window) closed(viewport *glfw.Window) {
 	})
 }
 
-func fyneToNativeCursor(cursor desktop.Cursor) (*Cursor, bool) {
+func fyneToNativeCursor(cursor desktop.Cursor, scale float32) (*Cursor, bool) { //nolint:unused // scale used on desktop only
 	if _, ok := cursor.(desktop.StandardCursor); !ok {
 		return nil, false // Custom cursors not implemented yet.
 	}

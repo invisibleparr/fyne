@@ -3,6 +3,8 @@
 package glfw
 
 import (
+	"image"
+	"image/color"
 	"testing"
 
 	"fyne.io/fyne/v2"
@@ -138,4 +140,49 @@ func TestKeyCodeToKeyName(t *testing.T) {
 
 	invalid = keyCodeToKeyName("invalid")
 	assert.Equal(t, fyne.KeyUnknown, invalid)
+}
+
+func TestScaleImageUpscaleSolid(t *testing.T) {
+	src := image.NewNRGBA(image.Rect(0, 0, 2, 2))
+	red := color.NRGBA{R: 255, A: 255}
+	for y := 0; y < 2; y++ {
+		for x := 0; x < 2; x++ {
+			src.Set(x, y, red)
+		}
+	}
+
+	dst := scaleImage(src, 2.0)
+	assert.Equal(t, 4, dst.Bounds().Dx())
+	assert.Equal(t, 4, dst.Bounds().Dy())
+	for y := 0; y < 4; y++ {
+		for x := 0; x < 4; x++ {
+			r, g, b, a := dst.At(x, y).RGBA()
+			assert.InDelta(t, 255, r>>8, 1)
+			assert.InDelta(t, 0, g>>8, 1)
+			assert.InDelta(t, 0, b>>8, 1)
+			assert.InDelta(t, 255, a>>8, 1)
+		}
+	}
+}
+
+func TestScaleImageDownscale(t *testing.T) {
+	src := image.NewNRGBA(image.Rect(0, 0, 8, 6))
+	dst := scaleImage(src, 0.5)
+	assert.Equal(t, 4, dst.Bounds().Dx())
+	assert.Equal(t, 3, dst.Bounds().Dy())
+
+	tiny := scaleImage(src, 0.01) // never zero or negative size
+	assert.Equal(t, 1, tiny.Bounds().Dx())
+}
+
+func TestScaleImageBlendsCheckerboard(t *testing.T) {
+	src := image.NewNRGBA(image.Rect(0, 0, 2, 2))
+	white := color.NRGBA{R: 255, G: 255, B: 255, A: 255}
+	src.Set(0, 0, white)
+	src.Set(1, 1, white) // other two stay transparent black
+
+	dst := scaleImage(src, 4.0)
+	midR, _, _, _ := dst.At(3, 3).RGBA() // between all four cells = gray-ish, not pure white/black
+	assert.Greater(t, midR>>8, uint32(60))
+	assert.Less(t, midR>>8, uint32(200))
 }

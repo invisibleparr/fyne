@@ -356,9 +356,15 @@ func (w *window) processMouseMoved(xpos float64, ypos float64) {
 		return hover
 	})
 
+	if cursor == desktop.Cursor(desktop.DefaultCursor) {
+		if custom := desktop.GamepadCursor(); custom != nil {
+			cursor = custom // app-themed default; hovered object cursors still win
+		}
+	}
+
 	if w.cursor != cursor {
 		// cursor has changed, store new cursor and apply change via glfw
-		rawCursor, isCustomCursor := fyneToNativeCursor(cursor)
+		rawCursor, isCustomCursor := fyneToNativeCursor(cursor, w.canvas.Scale())
 		w.cursor = cursor
 
 		if view := w.view(); view != nil { // not yet visible? linux weirdness
@@ -749,6 +755,9 @@ func (w *window) processKeyPressed(keyName fyne.KeyName, keyASCII fyne.KeyName, 
 
 	// No shortcut detected, pass down to TypedKey
 	focused := w.canvas.Focused()
+	if focused == nil {
+		focused = gamepadOSKPhysicalTarget(w) // on-screen keyboard overlay shadows canvas focus; keep the real keyboard alive
+	}
 	if focused != nil {
 		focused.TypedKey(keyEvent)
 	} else if w.canvas.onTypedKey != nil {
@@ -761,7 +770,11 @@ func (w *window) processKeyPressed(keyName fyne.KeyName, keyASCII fyne.KeyName, 
 //
 // Characters do not map 1:1 to physical keys, as a key may produce zero, one or more characters.
 func (w *window) processCharInput(char rune) {
-	if focused := w.canvas.Focused(); focused != nil {
+	focused := w.canvas.Focused()
+	if focused == nil {
+		focused = gamepadOSKPhysicalTarget(w) // on-screen keyboard overlay shadows canvas focus; keep the real keyboard alive
+	}
+	if focused != nil {
 		focused.TypedRune(char)
 	} else if w.canvas.onTypedRune != nil {
 		w.canvas.onTypedRune(char)
